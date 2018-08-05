@@ -304,5 +304,25 @@ aws lambda add-permission --function-name s3-function-utsav \
 --statement-id weekly-s3-func \
 --principal s3.amazonaws.com \
 --source-arn arn:aws:s3:::s3-read-weakly \
---region us-east-1 \
---profile default
+--region us-east-1 
+
+aws events put-targets --rule start-ec2 --targets file://targets.json
+
+aws events put-targets --rule stop-ec2 --targets file://targets.json
+
+aws events put-targets --rule weekly-s3-func --targets file://targets.json
+
+#taking inputs from user
+read -p "Enter Day: " day
+read -p "Enter starttime ,stoptime, cronstart, cronstop in the given sequence" starttime stoptime cronstart cronstop
+string="{\"$day\":[{"\"start\"":\"$starttime\"}, {"\"stop\"":\"$stoptime\"}, {"\"cronstart\"":\"$cronstart\"},{"\"cronstop\"":\"$cronstop\"}],"
+for i in {1..6}
+do
+read -p "Enter Day: " day
+read -p "Enter starttime ,stoptime, cronstart, cronstop in the given sequence" starttime stoptime cronstart cronstop
+string+="\"$day\":[{"\"start\"":\"$starttime\"}, {"\"stop\"":\"$stoptime\"}, {"\"cronstart\"":\"$cronstart\"},{"\"cronstop\"":\"$cronstop\"}],"
+done
+string+="}"
+echo $string | sed 's/,\(.\)$/\1/' > weekly.json
+
+aws s3 cp weekly.json s3://s3-read-weakly
